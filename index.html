@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>O Tesouro do Liceu — Edição Deluxe</title>
+<style>
+:root{
+  --bg:#061225;--panel:#0b1e38;--panel2:#102b4b;--line:#2b5d88;
+  --text:#eff8ff;--muted:#a9c7df;--cyan:#45dcff;--gold:#ffd166;
+  --green:#45e0a2;--danger:#ff7080;
+}
+*{box-sizing:border-box}
+body{
+ margin:0; min-height:100vh; color:var(--text);
+ font-family:Inter,Segoe UI,Arial,sans-serif;
+ background:radial-gradient(circle at 50% 0,#174b72 0,#07152b 48%,#030914 100%);
+ overflow-x:hidden;
+}
+button{font:inherit}
+.app{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:14px}
+.shell{
+ width:min(1240px,100%); overflow:hidden; border-radius:22px;
+ border:1px solid #24577e; background:#061326eF;
+ box-shadow:0 25px 90px #0009;
+}
+header{
+ display:flex;justify-content:space-between;align-items:center;gap:15px;
+ padding:12px 16px;background:linear-gradient(90deg,#09213f,#0d3459);
+ border-bottom:1px solid #245b83;
+}
+.logoTitle{display:flex;align-items:center;gap:10px}.logo{font-size:34px}
+h1{font-size:18px;margin:0}.sub{font-size:11px;color:var(--muted);margin-top:3px}
+.stats{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end;align-items:center}
+.stat{padding:7px 9px;border-radius:10px;background:#071a31;border:1px solid #28587f;font-size:12px}
+.stat b{color:var(--gold)}
+.btnExitHeader{
+ background:#502132;border:1px solid #ff7080;color:#fff;
+ padding:7px 12px;border-radius:10px;font-size:12px;font-weight:bold;
+ cursor:pointer;transition:.2s;
+}
+.btnExitHeader:hover{background:#75243e;transform:scale(1.03)}
+.layout{display:grid;grid-template-columns:1fr 230px;gap:0}
+.stage{padding:12px;min-width:0}
+.canvasWrap{position:relative}
+canvas{
+ width:100%;height:auto;display:block;aspect-ratio:16/9;
+ border-radius:16px;border:1px solid #2b628e;background:#123a32;
+ box-shadow:inset 0 0 40px #0007;
+}
+#toast{
+ position:absolute;left:50%;bottom:42px;transform:translate(-50%,20px);
+ opacity:0;pointer-events:none;background:#06182eE8;border:1px solid #4c8ab6;
+ padding:10px 15px;border-radius:12px;transition:.25s;z-index:20;
+ max-width:85%;text-align:center;font-size:13px;
+}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+.hud{
+ display:flex;align-items:center;justify-content:space-between;gap:12px;
+ padding:9px 4px 0;flex-wrap:wrap;
+}
+.quest{font-size:13px;color:#d9edf9}.quest b{color:var(--cyan)}
+.controls{font-size:11px;color:#8fb2ca}
+.side{
+ background:linear-gradient(180deg,#0b203b,#08172b);
+ border-left:1px solid #214d70;padding:13px;
+}
+.chapter{
+ padding:10px;border-radius:12px;border:1px solid #285a80;background:#081a31;
+ margin-bottom:10px;
+}
+.chapter .small{font-size:10px;color:#83b2d3;text-transform:uppercase;letter-spacing:.08em}
+.chapter h3{font-size:15px;margin:4px 0}.chapter p{font-size:11px;color:#a9c8dd;margin:0;line-height:1.4}
+.progress{height:8px;background:#061225;border-radius:8px;overflow:hidden;margin-top:8px}
+.progress>div{height:100%;width:0;background:linear-gradient(90deg,#2c9cff,#45e0ff);transition:.4s}
+.miniTitle{font-size:11px;color:#85b5d6;text-transform:uppercase;margin:15px 0 6px}
+.inventory{display:flex;flex-wrap:wrap;gap:5px}.item{
+ font-size:10px;padding:5px 7px;border-radius:8px;background:#2b220b;
+ border:1px solid #8b6d2c;color:#ffe08a
+}
+.characterCard{
+ display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #173955;
+}
+.avatar{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#173b5d;font-size:18px}
+.characterCard b{font-size:11px}.characterCard span{display:block;font-size:9px;color:#8eafc7}
+.mobile{display:none;grid-template-columns:repeat(3,48px);justify-content:center;gap:5px;margin-top:8px}
+.mobile button{height:42px;border-radius:99px;border:1px solid #345f82;background:#0c2746;color:#fff}
+.overlay{
+ position:absolute;inset:12px;display:flex;align-items:center;justify-content:center;
+ border-radius:16px;background:#020a15B8;backdrop-filter:blur(5px);z-index:30;
+}
+.card{
+ width:min(720px,94%);max-height:90%;overflow:auto;
+ padding:25px;border-radius:20px;border:1px solid #34709e;
+ background:linear-gradient(180deg,#112f52,#081a32);
+ box-shadow:0 25px 80px #000A;
+}
+.card h2{font-size:27px;margin:0 0 7px}.card p{color:#c8ddec;line-height:1.55}
+.chapterBadge{
+ display:inline-block;padding:5px 9px;border-radius:8px;background:#123e62;
+ border:1px solid #2d709d;color:#67ddff;font-size:11px;font-weight:800;
+}
+.bigIcon{text-align:center;font-size:48px;margin:0 0 4px}
+.btn{
+ border:0;border-radius:12px;padding:11px 17px;color:#fff;font-weight:800;cursor:pointer;
+ background:linear-gradient(135deg,#2f7dff,#28c8ff);box-shadow:0 8px 20px #006eff40;
+ width: 100%; margin-top: 10px;
+}
+.btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn.alt{background:#173b62;border:1px solid #3b6e97;box-shadow:none;width:auto}
+.btn.danger{background:linear-gradient(135deg,#e11d48,#f43f5e);box-shadow:none}
+.btn.hint{background:linear-gradient(135deg,#d97706,#f59e0b);margin-top:0;width:auto;font-size:12px;padding:8px 12px}
+.answers{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:15px}
+.answer{
+ padding:12px;text-align:left;border-radius:11px;border:1px solid #356c96;
+ background:#0a2341;color:#eaf7ff;cursor:pointer
+}
+.answer:hover{background:#143b66;border-color:#4ccaff}
+.answer.correct{background:#0d513e;border-color:#4de4ad}
+.answer.wrong{background:#502132;border-color:#ff7282}
+.answer.disabled{opacity:0.3;pointer-events:none}
+.feedback{min-height:35px;margin-top:11px;color:#d9edf8;font-size:13px}
+.dialogue{
+ position:absolute;z-index:18;display:none;max-width:310px;
+ padding:11px 13px;border-radius:13px;background:#f3f8fc;color:#10253b;
+ border:2px solid #64d8ff;box-shadow:0 10px 35px #0008;font-size:12px;
+}
+.dialogue:after{
+ content:"";position:absolute;bottom:-9px;left:25px;
+ width:15px;height:15px;background:#f3f8fc;transform:rotate(45deg);
+ border-right:2px solid #64d8ff;border-bottom:2px solid #64d8ff;
+}
+input[type="text"], select {
+ width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #34709e;
+ background: #081a31; color: #fff; margin-top: 8px; margin-bottom: 12px; font-size: 14px;
+}
+.skinSelector{
+ display:flex;gap:10px;justify-content:center;margin:12px 0;
+}
+.skinOption{
+ font-size:28px;padding:10px 15px;border-radius:12px;background:#091d36;
+ border:2px solid #225179;cursor:pointer;transition:.2s;
+}
+.skinOption:hover,.skinOption.selected{
+ border-color:var(--cyan);background:#133c66;transform:scale(1.1);
+}
+.qHeader{display:flex;justify-content:space-between;align-items:center}
+@media(max-width:850px){
+ .layout{grid-template-columns:1fr}.side{border-left:0;border-top:1px solid #214d70}
+ .answers{grid-template-columns:1fr}.side{display:none}
+}
+@media(max-width:700px){
+ header{align-items:flex-start;flex-direction:column}.stats{justify-content:flex-start}
+ .controls{width:100%}.mobile{display:grid}.card{padding:18px}.card h2{font-size:22px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="shell">
+<header>
+ <div class="logoTitle">
+  <div class="logo">🗺️</div>
+  <div><h1>O TESOURO DO LICEU</h1><div class="sub">Edição Deluxe • EEMTI Liceu Alfredo Almeida Machado</div></div>
+ </div>
+ <div class="stats">
+  <div class="stat">🔥 <b id="combo">1x</b></div>
+  <div class="stat">🪙 <b id="coins">0</b></div>
+  <div class="stat">🔑 <b id="keys">0</b></div>
+  <div class="stat">📜 <b id="done">0/20</b></div>
+  <div class="stat">⭐ <b id="score">0</b></div>
+  <div class="stat">⏱️ <b id="timer">0s</b></div>
+  <button class="btnExitHeader" onclick="promptExit()">🚪 SAIR DO JOGO</button>
+ </div>
+</header>
+
+<div class="layout">
+<div class="stage">
+ <div class="canvasWrap">
+  <canvas id="game" width="960" height="540"></canvas>
+  <div id="toast"></div>
+  <div id="dialogue" class="dialogue"></div>
+
+  <!-- TELA INICIAL -->
+  <div id="start" class="overlay">
+   <div class="card">
+    <div class="bigIcon">🏫 🗺️ 🏆</div>
+    <span class="chapterBadge">REGISTRO DO EXPLORADOR</span>
+    <h2>O mistério do antigo tesouro matemático</h2>
+    <p>Escolha o seu personagem e digite os seus dados para iniciar a caça ao tesouro!</p>
+
+    <label style="font-size: 12px; color: var(--cyan);">Escolha o seu Avatar:</label>
+    <div class="skinSelector">
+      <div class="skinOption selected" onclick="selectSkin('wizard', this)">🧙‍♂️</div>
+      <div class="skinOption" onclick="selectSkin('explorer', this)">🤠</div>
+      <div class="skinOption" onclick="selectSkin('scientist', this)">👩‍🔬</div>
+      <div class="skinOption" onclick="selectSkin('robot', this)">🤖</div>
+    </div>
+    
+    <label style="font-size: 12px; color: var(--cyan);">Seu Nome Completo:</label>
+    <input type="text" id="playerName" placeholder="Ex: João Silva" required>
+
+    <label style="font-size: 12px; color: var(--cyan);">Sua Turma:</label>
+    <select id="playerClass">
+      <option value="">Selecione a turma...</option>
+      <option value="1º A">1º A</option>
+      <option value="1º B">1º B</option>
+      <option value="1º C">1º C</option>
+      <option value="1º D">1º D</option>
+      <option value="1º H">1º H</option>
+    </select>
+
+    <button class="btn" id="startBtn">COMEÇAR A AVENTURA</button>
+   </div>
+  </div>
+
+  <!-- TELA DE SAÍDA / CONFIRMAÇÃO -->
+  <div id="exitModal" class="overlay" style="display:none">
+   <div class="card" style="max-width:450px; text-align:center;">
+    <div class="bigIcon">🚪</div>
+    <h2>Deseja mesmo sair do jogo?</h2>
+    <p>Se sair agora, o seu progresso atual será finalizado e os seus pontos acumulados serão salvos na planilha.</p>
+    <button class="btn danger" onclick="confirmExit()">SIM, SALVAR E SAIR</button>
+    <button class="btn alt" style="width:100%; margin-top:8px;" onclick="cancelExit()">CONTINUAR JOGANDO</button>
+   </div>
+  </div>
+
+  <div id="question" class="overlay" style="display:none">
+   <div class="card">
+    <div class="qHeader">
+      <span class="chapterBadge" id="qBadge"></span>
+      <button class="btn hint" id="buyHintBtn" onclick="buyHint()">💡 Eliminar 2 Opções (15 🪙)</button>
+    </div>
+    <h2 id="qText"></h2>
+    <div class="answers" id="answers"></div>
+    <div class="feedback" id="feedback"></div>
+    <button class="btn alt" id="continue" style="display:none">CONTINUAR</button>
+   </div>
+  </div>
+
+  <div id="end" class="overlay" style="display:none">
+   <div class="card">
+    <div class="bigIcon">🏆✨</div>
+    <span class="chapterBadge">CAPÍTULO FINAL</span>
+    <h2 id="endTitle">Você encontrou o Tesouro do Liceu!</h2>
+    <p id="endText"></p>
+    <p id="saveStatus" style="color: var(--gold); font-weight: bold;">Enviando pontuação para a planilha...</p>
+    <button class="btn" onclick="location.reload()">JOGAR NOVAMENTE</button>
+   </div>
+  </div>
+ </div>
+
+ <div class="hud">
+  <div class="quest">🎯 <b>Missão:</b> <span id="quest">Fale com a Prof. Luna na entrada.</span></div>
+  <div class="controls">WASD/setas • E/Enter • Explore e encontre os pergaminhos ocultos!</div>
+ </div>
+ <div class="mobile">
+  <span></span><button data-key="ArrowUp">▲</button><span></span>
+  <button data-key="ArrowLeft">◀</button><button data-key="e">●</button><button data-key="ArrowRight">▶</button>
+  <span></span><button data-key="ArrowDown">▼</button><span></span>
+ </div>
+</div>
+
+<aside class="side">
+ <div class="chapter">
+  <div class="small">Capítulo atual</div>
+  <h3 id="chapterName">1 • A Carta Escondida</h3>
+  <p id="chapterDesc">Descubra a primeira pista e abra o primeiro baú.</p>
+  <div class="progress"><div id="progress"></div></div>
+ </div>
+ <div class="miniTitle">Inventário</div>
+ <div class="inventory" id="inventory"><span style="font-size:10px;color:#7898b0">vazio</span></div>
+
+ <div class="miniTitle">Equipe da aventura</div>
+ <div class="characterCard"><div class="avatar">🧙</div><div><b>Prof. Luna</b><span>Guardiã das pistas</span></div></div>
+ <div class="characterCard"><div class="avatar">🧑‍🚀</div><div><b>Caio</b><span>Explorador da biblioteca</span></div></div>
+ <div class="characterCard"><div class="avatar">🧑‍🎓</div><div><b>Bia</b><span>Guardiã da quadra</span></div></div>
+
+ <div class="miniTitle">Mapa</div>
+ <p style="font-size:10px;color:#89a9c1;line-height:1.45">
+ 🟦 Biblioteca<br>🟩 Pátio/Jardim<br>🟪 Laboratório<br>🟨 Quadra<br>🟥 Praça<br>🏆 Tesouro
+ </p>
+</aside>
+</div>
+</div>
+</div>
+
+<script>
+// ==========================================
+// SEU LINK DO GOOGLE APPS SCRIPT
+// ==========================================
+const GOOGLE_SCRIPT_URL = "https://script.google.com/a/macros/prof.ce.gov.br/s/AKfycbyEccLgnO-6s5S9yoflhxGnhwvUxU63hOdpaelKsQbekjg5jk2zglLS8iiu56ECCst2/exec";
+
+// --- SINTETIZADOR DE ÁUDIO ---
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playSound(type) {
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  const now = audioCtx.currentTime;
+
+  if (type === 'coin') {
+    osc.frequency.setValueAtTime(987, now);
+    osc.frequency.setValueAtTime(1318, now + 0.08);
+    gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+    osc.start(now); osc.stop(now + 0.25);
+  } else if (type === 'step') {
+    osc.type = 'triangle'; osc.frequency.setValueAtTime(120, now);
+    gain.gain.setValueAtTime(0.02, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+    osc.start(now); osc.stop(now + 0.05);
+  } else if (type === 'correct') {
+    osc.type = 'sine'; osc.frequency.setValueAtTime(523, now);
+    osc.frequency.setValueAtTime(659, now + 0.1); osc.frequency.setValueAtTime(783, now + 0.2);
+    gain.gain.setValueAtTime(0.15, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+    osc.start(now); osc.stop(now + 0.4);
+  } else if (type === 'wrong') {
+    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(220, now);
+    osc.frequency.setValueAtTime(180, now + 0.15);
+    gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+    osc.start(now); osc.stop(now + 0.3);
+  } else if (type === 'win') {
+    [440, 554, 659, 880].forEach((freq, idx) => {
+      const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+      o.connect(g); g.connect(audioCtx.destination);
+      o.frequency.setValueAtTime(freq, now + idx * 0.12);
+      g.gain.setValueAtTime(0.12, now + idx * 0.12); g.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.12 + 0.4);
+      o.start(now + idx * 0.12); o.stop(now + idx * 0.12 + 0.4);
+    });
+  }
+}
+
+const canvas=document.getElementById("game"),ctx=canvas.getContext("2d");
+const W=960,H=540;
+
+const questions=[
+{n:1,t:"Uma loja cobra uma taxa fixa de R$ 8,00 pela entrega de um produto e mais R$ 3,00 por quilômetro percorrido pelo entregador. Se x representa a quantidade de quilômetros percorridos e y o valor total da entrega, qual é a lei de formação dessa função?",a:["y = 8x + 3","y = 3x + 8","y = 3x − 8","y = 8x − 3","y = 11x"],c:1},
+{n:2,t:"Uma estudante economiza R$20,00 por semana. A quantia economizada após x semanas pode ser representada por f(x) = 20x. Quanto ela terá economizado após 6 semanas?",a:["R$ 60,00","R$ 100,00","R$ 120,00","R$ 140,00","R$ 160,00"],c:2},
+{n:3,t:"No setor de fabricação de calçados de Quixeramobim, estudantes analisam diferentes tipos de funções. Qual das opções representa uma função afim?",a:["f(x) = x² + 2","f(x) = 3x − 5","f(x) = 4/x","f(x) = x³ + 1","f(x) = 2ˣ"],c:1},
+{n:4,t:"Um aplicativo de transporte cobra R$ 6,00 de taxa fixa mais R$ 2,00 por quilômetro percorrido. Qual será o valor de uma viagem de 7 km?",a:["R$ 12,00","R$ 14,00","R$ 18,00","R$ 20,00","R$ 21,00"],c:3},
+{n:5,t:"Em uma situação relacionada à produção de uma fábrica de calçados de Quixeramobim, a quantidade de material utilizado pode ser representada por f(x) = 2x + 4. À medida que x aumenta, o valor de f(x):",a:["diminui.","permanece sempre igual.","aumenta.","torna-se sempre negativo.","torna-se igual a zero."],c:2},
+{n:6,t:"Na atividade de produção de leite da região de Quixeramobim, uma relação entre duas grandezas foi representada por f(x) = x + 2. Qual ponto pertence ao gráfico dessa função?",a:["(0, 0)","(1, 1)","(1, 3)","(2, 5)","(3, 2)"],c:2},
+{n:7,t:"O gráfico de uma função afim é uma reta que passa pelos pontos (0, 4) e (2, 8). Qual é a lei de formação dessa função?",a:["f(x) = 2x + 4","f(x) = 4x + 2","f(x) = 2x − 4","f(x) = 4x − 2","f(x) = x + 4"],c:0},
+{n:8,t:"Em uma atividade de Matemática, a situação é representada por f(x) = 2x − 10. A raiz da função é o valor de x para o qual f(x) = 0. Qual é essa raiz?",a:["2","4","5","8","10"],c:2},
+{n:9,t:"O saldo de uma conta é representado por S(x) = 100 − 20x, em que x representa a quantidade de retiradas de R$ 20,00. Depois de quantas retiradas o saldo será igual a zero?",a:["2","4","5","10","20"],c:2},
+{n:10,t:"Qual das funções abaixo representa uma função quadrática?",a:["f(x) = 3x + 2","f(x) = 5 − x","f(x) = x² − 4x + 3","f(x) = 7x","f(x) = 10"],c:2},
+{n:11,t:"Considere a função f(x) = x² − 6x + 5. O gráfico dessa função é uma parábola com concavidade:",a:["para baixo, pois a < 0.","para cima, pois a > 0.","para cima, pois b < 0.","para baixo, pois c > 0.","não possui concavidade."],c:1},
+{n:12,t:"Durante uma partida de futebol, a trajetória de uma bola chutada em direção ao gol pode ser representada por f(x) = x² − 5x + 6. Quais são as raízes da função?",a:["1 e 6","2 e 3","3 e 4","−2 e −3","0 e 6"],c:1},
+{n:13,t:"O gráfico de uma função quadrática corta o eixo x nos pontos x = 2 e x = 6. Isso significa que:",a:["as raízes são 2 e 6.","o vértice é (2, 6).","a função não possui raízes.","o ponto máximo é 6.","o ponto mínimo é 2."],c:0},
+{n:14,t:"Na atividade leiteira da região de Quixeramobim, uma situação foi representada por f(x) = x² − 4x + 3. Considerando a função apresentada, a coordenada x do vértice da parábola é:",a:["−4","−2","2","3","4"],c:2},
+{n:15,t:"Durante uma vaquejada realizada no município de Quixeramobim, uma situação foi modelada por f(x) = −x² + 6x + 1. Como o coeficiente de x² é negativo, a parábola possui concavidade para baixo. O vértice representa um:",a:["ponto máximo.","ponto mínimo.","ponto de raiz.","ponto de interseção com o eixo y.","ponto de origem."],c:0},
+{n:16,t:"Em uma pequena propriedade de Quixeramobim, a produção de queijo é representada por uma função quadrática cujo gráfico é uma parábola com concavidade voltada para cima. O vértice representa um:",a:["ponto máximo.","ponto mínimo.","ponto de interseção com o eixo y.","ponto de raiz obrigatoriamente.","ponto de origem."],c:1},
+{n:17,t:"Dona Maria acompanha o orçamento de sua casa e percebe que o valor economizado pode ser representado por f(x) = −x² + 4x + 5. Como a concavidade é para baixo, a função possui um ponto:",a:["mínimo.","máximo.","de origem.","sem vértice.","de raiz única obrigatoriamente."],c:1},
+{n:18,t:"Um caminhoneiro acompanha o desempenho de sua viagem. A relação entre a quantidade de combustível economizada e a velocidade média foi representada por uma função quadrática. De acordo com o gráfico, o vértice da parábola representa:",a:["o ponto mínimo da função.","o ponto máximo da função.","uma raiz da função obrigatoriamente.","o ponto de interseção com o eixo y.","o ponto de origem."],c:1},
+{n:19,t:"A altura de uma bola é dada por h(t) = −t² + 6t. Qual é a altura máxima atingida pela bola?",a:["6 m","8 m","9 m","12 m","18 m"],c:2},
+{n:20,t:"Uma função quadrática que representa um lucro possui concavidade voltada para baixo. O vértice dessa parábola representa:",a:["o menor lucro possível.","o maior lucro possível.","uma raiz obrigatoriamente.","o ponto de origem.","um valor que não pode ser interpretado."],c:1}
+];
+
+const chapters=[
+ {name:"1 • A Carta Escondida",desc:"Entrada e pátio: descubra a carta e complete os primeiros desafios.",area:"PÁTIO"},
+ {name:"2 • O Código da Biblioteca",desc:"A biblioteca guarda uma chave e os desafios das funções afins.",area:"BIBLIOTECA"},
+ {name:"3 • O Laboratório das Parábolas",desc:"No laboratório, você começa a desvendar as funções quadráticas.",area:"LABORATÓRIO"},
+ {name:"4 • O Desafio da Quadra",desc:"Raízes e vértices levam você até a última chave.",area:"QUADRA"},
+ {name:"5 • A Praça do Tesouro",desc:"Os últimos desafios liberam a caixa escondida.",area:"PRAÇA"}
+];
+
+const player={x:120,y:420,r:15,speed:3.15,dir:1,bob:0,skin:'wizard'};
+const npcs=[
+ {id:"luna",x:155,y:370,name:"Prof. Luna",kind:"luna"},
+ {id:"caio",x:465,y:105,name:"Caio",kind:"caio"},
+ {id:"bia",x:690,y:385,name:"Bia",kind:"bia"}
+];
+const chests=[
+ {id:1,x:285,y:410,q:0,unlocked:true,opened:false,anim:0},
+ {id:2,x:500,y:245,q:4,unlocked:false,opened:false,anim:0},
+ {id:3,x:750,y:135,q:8,unlocked:false,opened:false,anim:0},
+ {id:4,x:610,y:420,q:12,unlocked:false,opened:false,anim:0},
+ {id:5,x:825,y:365,q:16,unlocked:false,opened:false,anim:0}
+];
+const scrolls=[
+ {id:1,x:350,y:100,collected:false,fact:"O símbolo f(x) foi popularizado por Leonhard Euler em 1734!"},
+ {id:2,x:600,y:100,collected:false,fact:"As parábolas são usadas na construção de antenas parabólicas para focar sinais!"},
+ {id:3,x:400,y:350,collected:false,fact:"A palavra 'Álgebra' vem do árabe 'Al-Jabr', que significa restauração!"},
+ {id:4,x:880,y:400,collected:false,fact:"O vértice de uma parábola determina o ponto máximo ou mínimo de uma trajetória!"}
+];
+
+const treasure={x:855,y:110,unlocked:false};
+
+let gameStarted=false,isPaused=false,activeQ=null,qInChest=0,done=0,coins=0,score=0,chapter=0,errorsCount=0,combo=1;
+let inventory=[],particles=[],floatingTexts=[],keysDown={};
+let playerName="", playerClass="", startTime, timerInterval, currentChestId=null;
+
+const $=id=>document.getElementById(id);
+function selectSkin(skin, el) {
+ player.skin = skin;
+ document.querySelectorAll('.skinOption').forEach(s => s.classList.remove('selected'));
+ el.classList.add('selected');
+}
+
+function distance(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
+function setQuest(t){$("quest").textContent=t}
+function toast(t){
+ const el=$("toast");el.textContent=t;el.classList.add("show");
+ clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.classList.remove("show"),2800);
+}
+
+function spawnFloatingText(x, y, text, color="#ffd166") {
+ floatingTexts.push({x, y, text, color, life: 60, maxLife: 60});
+}
+
+function spawnCoins(x,y,count){
+ for(let i=0;i<count;i++){
+  particles.push({x,y,vx:(Math.random()-0.5)*4,vy:(Math.random()-0.5)*4-2,life:30,color:"#ffd166"});
+ }
+}
+
+function updateUI(){
+ $("coins").textContent=coins;$("keys").textContent=inventory.length;
+ $("done").textContent=done+"/20";$("score").textContent=score;
+ $("combo").textContent=combo+"x";
+ $("progress").style.width=(done/20*100)+"%";
+ $("chapterName").textContent=chapters[chapter].name;
+ $("chapterDesc").textContent=chapters[chapter].desc;
+ $("inventory").innerHTML=inventory.length?inventory.map(x=>`<span class="item">🔑 ${x}</span>`).join(""):"<span style='font-size:10px;color:#7898b0'>vazio</span>";
+}
+
+function startGame(){
+ playerName = $("playerName").value.trim();
+ playerClass = $("playerClass").value;
+
+ if(!playerName || !playerClass) {
+   alert("Por favor, preencha o seu nome e escolha a turma!");
+   return;
+ }
+
+ $("start").style.display="none";gameStarted=true;
+ player.x=155;player.y=315;
+ startTime = new Date();
+ timerInterval = setInterval(() => {
+    if (!isPaused) {
+      const elapsed = Math.floor((new Date() - startTime) / 1000);
+      $("timer").textContent = elapsed + "s";
+    }
+ }, 1000);
+
+ setQuest("Fale com a Prof. Luna e descubra a primeira pista.");
+ showDialogue("Prof. Luna","A carta diz que cinco baús escondem o caminho. Comece pelo Baú 1, no pátio!");
+ updateUI();
+}
+$("startBtn").onclick=startGame;
+
+function promptExit() {
+ if (!gameStarted) return;
+ isPaused = true;
+ $("exitModal").style.display = "flex";
+}
+
+function cancelExit() {
+ $("exitModal").style.display = "none";
+ isPaused = false;
+}
+
+function confirmExit() {
+ $("exitModal").style.display = "none";
+ finish(true);
+}
+
+window.addEventListener("keydown", e => {
+ if (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT") return;
+ const k = e.key.toLowerCase();
+ keysDown[k] = true;
+ if (["arrowup","arrowdown","arrowleft","arrowright"," ","w","a","s","d"].includes(k)) e.preventDefault();
+ if ((k === "e" || e.key === "Enter") && gameStarted && !activeQ && !isPaused) interact();
+});
+
+window.addEventListener("keyup",e=>keysDown[e.key.toLowerCase()]=false);
+document.querySelectorAll(".mobile button").forEach(b=>{
+ b.addEventListener("pointerdown",()=>{if(b.dataset.key==="e")interact();else keysDown[b.dataset.key.toLowerCase()]=true});
+ b.addEventListener("pointerup",()=>keysDown[b.dataset.key.toLowerCase()]=false);
+ b.addEventListener("pointerleave",()=>keysDown[b.dataset.key.toLowerCase()]=false);
+});
+
+let typewriterTimer;
+function showDialogue(name,text){
+ const el=$("dialogue");
+ clearTimeout(typewriterTimer);
+ el.style.display="block";
+ const n=npcs.find(x=>x.name===name);
+ if(n){el.style.left=(n.x/W*100)+"%";el.style.top=Math.max(3,(n.y/H*100)-18)+"%";}
+ 
+ let i = 0;
+ el.innerHTML = `<b>${name}</b><br><span id="typeContent"></span>`;
+ function type() {
+   if (i < text.length) {
+     document.getElementById("typeContent").textContent += text.charAt(i);
+     i++;
+     typewriterTimer = setTimeout(type, 20);
+   }
+ }
+ type();
+ clearTimeout(showDialogue.t);showDialogue.t=setTimeout(()=>el.style.display="none",5500);
+}
+
+function nearest(){
+ let arr=[...npcs,...chests.map(x=>({...x,type:"chest"})),...scrolls.map(x=>({...x,type:"scroll"})),{...treasure,type:"treasure"}];
+ let best=null,bestD=999;
+ for(const o of arr){const d=distance(player,o);if(d<bestD){bestD=d;best=o}}
+ return bestD<62?best:null;
+}
+
+function interact(){
+ const o=nearest();
+ if(!o){toast("Explore o mapa e aproxime-se de um personagem, pergaminho ou baú.");return}
+ if(o.type==="treasure"){finish();return}
+ if(o.type==="chest"){openChest(o);return}
+ if(o.type==="scroll"){collectScroll(o);return}
+ talk(o);
+}
+
+function collectScroll(s){
+  if(s.collected) return;
+  s.collected = true;
+  coins += 15;
+  playSound('coin');
+  spawnFloatingText(s.x, s.y, "+15 🪙 Pergaminho!", "#45e0a2");
+  toast("📜 " + s.fact);
+  updateUI();
+}
+
+function talk(n){
+ if(n.id==="luna"){
+   if(done<4){chapter=0;setQuest("Abra o Baú 1 e resolva as questões 1–4.");showDialogue("Prof. Luna","Sua primeira missão é no pátio. O Baú 1 guarda quatro desafios.");}
+   else{chapter=1;chests[1].unlocked=true;setQuest("Converse com Caio na biblioteca.");showDialogue("Prof. Luna","Você conseguiu! Agora Caio conhece o código da biblioteca.");}
+ }
+ if(n.id==="caio"){
+   if(done<8){chapter=1;chests[1].unlocked=true;setQuest("Abra o Baú 2 e resolva as questões 5–8.");showDialogue("Caio","A biblioteca esconde o segundo código. Abra o Baú 2.");}
+   else{chapter=2;chests[2].unlocked=true;setQuest("Abra o Baú 3 no laboratório.");showDialogue("Caio","A chave do laboratório é sua. Agora as parábolas entram em cena.");}
+ }
+ if(n.id==="bia"){
+   if(done<12){chapter=3;chests[3].unlocked=true;setQuest("Abra o Baú 4 e resolva as questões 13–16.");showDialogue("Bia","As pistas chegaram à quadra. O quarto baú está esperando.");}
+   else if(done<16){chapter=4;chests[4].unlocked=true;setQuest("Abra o Baú 5 e resolva as questões 17–20.");showDialogue("Bia","Você está perto! O último baú fica na praça.");}
+   else{chapter=4;setQuest("O tesouro está liberado. Vá até o 🏆.");showDialogue("Bia","Você completou todos os desafios. Agora procure a caixa dourada!");}
+ }
+ updateUI();
+}
+
+function openChest(c){
+ if(c.opened){toast("Este baú já foi aberto.");return}
+ if(!c.unlocked){toast("🔒 Baú bloqueado. Complete a etapa anterior.");return}
+ if(done!==c.q){toast("Complete os desafios anteriores antes de abrir este baú.");return}
+ qInChest=0;askQuestion(c);
+}
+
+function askQuestion(c){
+ const idx=c.q+qInChest;if(idx>=c.q+4){finishChest(c);return}
+ activeQ={c,idx};const q=questions[idx];
+ $("question").style.display="flex";$("qBadge").textContent=`CAPÍTULO ${chapter+1} • DESAFIO ${q.n}`;
+ $("qText").textContent=q.t;$("feedback").textContent="";$("continue").style.display="none";
+ $("buyHintBtn").style.display="inline-block";
+ const box=$("answers");box.innerHTML="";
+ q.a.forEach((a,i)=>{
+  const b=document.createElement("button");b.className="answer";b.dataset.idx=i;
+  b.textContent=String.fromCharCode(65+i)+") "+a;
+  b.onclick=()=>answer(i,b);box.appendChild(b);
+ });
+}
+
+function buyHint(){
+  if (coins < 15) { toast("🪙 Você precisa de 15 moedas para comprar uma dica!"); return; }
+  coins -= 15;
+  playSound('coin');
+  $("buyHintBtn").style.display="none";
+  const q = questions[activeQ.idx];
+  const wrongIndices = [0,1,2,3,4].filter(i => i !== q.c);
+  wrongIndices.sort(() => Math.random() - 0.5);
+  const toDisable = wrongIndices.slice(0, 2);
+  document.querySelectorAll(".answer").forEach(btn => {
+    if (toDisable.includes(parseInt(btn.dataset.idx))) {
+      btn.classList.add("disabled");
+    }
+  });
+  toast("💡 2 alternativas incorretas foram eliminadas!");
+  updateUI();
+}
+
+function answer(i,btn){
+ const q=questions[activeQ.idx];
+ document.querySelectorAll(".answer").forEach(b=>b.disabled=true);
+ $("buyHintBtn").style.display="none";
+ 
+ if(i===q.c){
+  playSound('correct');
+  const ptsGained = 100 * combo;
+  coins+=10; score+=ptsGained; done++; qInChest++;
+  spawnCoins(player.x,player.y,7);
+  spawnFloatingText(player.x, player.y - 20, `+${ptsGained} PTS! (Combo ${combo}x)`, "#45e0a2");
+  combo++;
+  btn.classList.add("correct");
+  $("feedback").innerHTML=`✅ <b>Acertou!</b> +10 moedas e +${ptsGained} pontos.`;
+  $("continue").style.display="inline-block";
+  currentChestId=activeQ.c.id;
+  $("continue").onclick=()=>{$("question").style.display="none";const cRef=chests.find(c=>c.id===currentChestId);activeQ=null;askQuestion(cRef);};
+ }else{
+  playSound('wrong');
+  errorsCount++; combo=1;
+  btn.classList.add("wrong");coins=Math.max(0,coins-3);score=Math.max(0,score-25);
+  $("feedback").innerHTML="❌ Não foi dessa vez. Perdeu 3 moedas e o combo resetou.";
+  $("continue").style.display="inline-block";
+  $("continue").onclick=()=>{$("question").style.display="none";activeQ=null;toast("A pista continua no mesmo baú.");};
+ }
+ updateUI();
+}
+
+function finishChest(c){
+ c.opened=true; c.anim=1;
+ playSound('win');
+ const rewards=["Pátio","Biblioteca","Laboratório","Quadra","Praça"][c.id-1];
+ if(!inventory.includes(rewards))inventory.push(rewards);
+ if(c.id<5){
+  chapter=c.id;
+  if(c.id===1){chests[1].unlocked=true;setQuest("Converse com Caio na biblioteca.");}
+  if(c.id===2){chests[2].unlocked=true;setQuest("Abra o Baú 3 no laboratório.");}
+  if(c.id===3){chests[3].unlocked=true;setQuest("Converse com Bia e siga para a quadra.");}
+  if(c.id===4){chests[4].unlocked=true;setQuest("Converse com Bia e abra o último baú.");}
+  toast("🔑 Você encontrou a chave da "+rewards+"!");
+ }else{
+  treasure.unlocked=true;chapter=4;setQuest("🏆 Vá até o tesouro e pressione E.");toast("🏆 Todos os 20 desafios concluídos!");
+ }
+ updateUI();
+}
+
+function finish(earlyExit = false){
+ clearInterval(timerInterval);
+ playSound('win');
+ const totalSeconds = Math.floor((new Date() - startTime) / 1000);
+
+ if (earlyExit) {
+   $("endTitle").innerText = "Partida Encerrada";
+   $("endText").innerHTML = `Até a próxima, <b>${playerName}</b> (${playerClass})!<br>Você saiu do jogo com <b>${score} pontos</b>, <b>${done}/20 questões</b> resolvidas e tempo de <b>${totalSeconds}s</b>.`;
+ } else {
+   $("endTitle").innerText = "Você encontrou o Tesouro do Liceu!";
+   $("endText").innerHTML = `Parabéns <b>${playerName}</b> (${playerClass})!<br>Você terminou a aventura com <b>${score} pontos</b>, <b>${coins} moedas</b> e gastou <b>${totalSeconds}s</b>.`;
+ }
+ 
+ $("end").style.display="flex";
+
+ const payload = {
+   nome: playerName, turma: playerClass, pontos: score, erros: errorsCount, tempoSegundos: totalSeconds
+ };
+
+ fetch(GOOGLE_SCRIPT_URL, {
+   method: "POST",
+   mode: "no-cors",
+   headers: { "Content-Type": "application/json" },
+   body: JSON.stringify(payload)
+ })
+ .then(() => {
+   $("saveStatus").innerText = "✅ Pontuação registrada na planilha com sucesso!";
+   $("saveStatus").style.color = "var(--green)";
+ })
+ .catch((err) => {
+   console.error(err);
+   $("saveStatus").innerText = "⚠️ Erro ao conectar com a planilha, mas seu jogo foi concluído!";
+   $("saveStatus").style.color = "var(--danger)";
+ });
+}
+
+// --- RENDERIZAÇÃO DO GAME LOOP NA CANVAS ---
+function updatePlayer(){
+ if(!gameStarted || activeQ || isPaused) return;
+ let dx=0, dy=0;
+ if(keysDown["arrowleft"]||keysDown["a"]) { dx -= 1; player.dir = -1; }
+ if(keysDown["arrowright"]||keysDown["d"]) { dx += 1; player.dir = 1; }
+ if(keysDown["arrowup"]||keysDown["w"]) dy -= 1;
+ if(keysDown["arrowdown"]||keysDown["s"]) dy += 1;
+
+ if(dx!==0 && dy!==0){ dx *= 0.7071; dy *= 0.7071; }
+
+ const nx = Math.max(30, Math.min(W - 30, player.x + dx * player.speed));
+ const ny = Math.max(30, Math.min(H - 30, player.y + dy * player.speed));
+
+ if(dx!==0 || dy!==0){
+   player.bob += 0.2;
+   if(Math.sin(player.bob) > 0.9) playSound('step');
+ }
+
+ player.x = nx; player.y = ny;
+}
+
+function drawMap(){
+ ctx.fillStyle = "#0a1f38"; ctx.fillRect(0,0,W,H);
+ 
+ // Zonas do mapa
+ ctx.fillStyle="#0d2e54"; ctx.fillRect(20,20,280,240); // Biblioteca
+ ctx.fillStyle="#103a28"; ctx.fillRect(320,20,320,240); // Pátio
+ ctx.fillStyle="#2d1548"; ctx.fillRect(660,20,280,240); // Laboratório
+ ctx.fillStyle="#42350a"; ctx.fillRect(20,280,440,240); // Quadra
+ ctx.fillStyle="#451118"; ctx.fillRect(480,280,460,240); // Praça
+
+ // Rótulos das áreas
+ ctx.fillStyle="rgba(255,255,255,0.15)"; ctx.font="bold 20px sans-serif";
+ ctx.fillText("BIBLIOTECA", 90, 140); ctx.fillText("PÁTIO / JARDIM", 400, 140);
+ ctx.fillText("LABORATÓRIO", 730, 140); ctx.fillText("QUADRA ESPORTIVA", 140, 410);
+ ctx.fillText("PRAÇA DO TESOURO", 630, 410);
+
+ // Objetos: Pergaminhos
+ scrolls.forEach(s => {
+   if(!s.collected){
+     ctx.font="20px sans-serif"; ctx.fillText("📜", s.x-10, s.y+7);
+   }
+ });
+
+ // Objetos: Baús
+ chests.forEach(c => {
+   ctx.font="28px sans-serif";
+   ctx.fillText(c.opened ? "🧰" : (c.unlocked ? "📦" : "🔒"), c.x-14, c.y+10);
+ });
+
+ // Objeto: Tesouro
+ ctx.font="36px sans-serif";
+ ctx.fillText(treasure.unlocked ? "🏆" : "🗝️", treasure.x-18, treasure.y+12);
+
+ // NPCs
+ npcs.forEach(n => {
+   ctx.font="28px sans-serif";
+   const icon = n.kind==='luna'?'🧙‍♀':(n.kind==='caio'?'🧑‍🚀':'🧑‍🎓');
+   ctx.fillText(icon, n.x-14, n.y+10);
+   ctx.fillStyle="#fff"; ctx.font="10px sans-serif"; ctx.textAlign="center";
+   ctx.fillText(n.name, n.x, n.y-20); ctx.textAlign="left";
+ });
+
+ // Marcador de Interação Próxima
+ const nObj = nearest();
+ if(nObj && !activeQ && gameStarted){
+   ctx.fillStyle="#45dcff"; ctx.font="bold 12px sans-serif"; ctx.textAlign="center";
+   ctx.fillText("Pressione E", nObj.x, nObj.y - 30); ctx.textAlign="left";
+ }
+
+ // Jogador
+ const skinIcons = {wizard:'🧙‍♂️', explorer:'🤠', scientist:'👩‍‍🔬', robot:'🤖'};
+ ctx.font="30px sans-serif";
+ const offsetY = Math.sin(player.bob)*3;
+ ctx.fillText(skinIcons[player.skin]||'🧙‍♂️️', player.x-15, player.y+10 + offsetY);
+
+ // Partículas
+ particles.forEach((p, i) => {
+   p.x += p.vx; p.y += p.vy; p.life--;
+   ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, 4, 4);
+   if(p.life <= 0) particles.splice(i, 1);
+ });
+
+ // Textos Flutuantes
+ floatingTexts.forEach((ft, i) => {
+   ft.y -= 0.8; ft.life--;
+   ctx.fillStyle = ft.color; ctx.font = "bold 13px sans-serif";
+   ctx.fillText(ft.text, ft.x - 20, ft.y);
+   if(ft.life <= 0) floatingTexts.splice(i, 1);
+ });
+}
+
+function loop(){
+ updatePlayer();
+ drawMap();
+ requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>

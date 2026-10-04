@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>O Tesouro do Liceu — Caça ao Tesouro Matemático</title>
+<style>
+:root{
+  --bg:#061225;--panel:#0b1e38;--panel2:#102b4b;--line:#2b5d88;
+  --text:#eff8ff;--muted:#a9c7df;--cyan:#45dcff;--gold:#ffd166;
+  --green:#45e0a2;--danger:#ff7080;
+}
+*{box-sizing:border-box}
+body{
+ margin:0; min-height:100vh; color:var(--text);
+ font-family:Inter,Segoe UI,Arial,sans-serif;
+ background:radial-gradient(circle at 50% 0,#174b72 0,#07152b 48%,#030914 100%);
+}
+button, input, select{font:inherit}
+.app{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:14px}
+.shell{
+ width:min(1240px,100%); overflow:hidden; border-radius:22px;
+ border:1px solid #24577e; background:#061326eF;
+ box-shadow:0 25px 90px #0009;
+}
+header{
+ display:flex;justify-content:space-between;align-items:center;gap:15px;
+ padding:12px 16px;background:linear-gradient(90deg,#09213f,#0d3459);
+ border-bottom:1px solid #245b83;
+}
+.logoTitle{display:flex;align-items:center;gap:12px}
+.school-logo{
+ height:60px;
+ width:80px;
+ object-fit:contain;
+ object-position:center center;
+ border-radius:8px;
+ border:1px solid #3b6d95;
+ background:rgba(255,255,255,0.05);
+}
+h1{font-size:18px;margin:0;display:flex;align-items:center;gap:8px}
+.sub{font-size:11px;color:var(--muted);margin-top:3px}
+.math-syms-header{color:#45dcff;font-family:'Courier New',monospace;font-size:0.85rem;opacity:0.8;letter-spacing:3px}
+.stats{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.stat{padding:7px 9px;border-radius:10px;background:#071a31;border:1px solid #28587f;font-size:12px}
+.stat b{color:var(--gold)}
+.layout{display:grid;grid-template-columns:1fr 240px;gap:0}
+.stage{padding:12px;min-width:0}
+.canvasWrap{position:relative}
+canvas{
+ width:100%;height:auto;display:block;aspect-ratio:16/9;
+ border-radius:16px;border:1px solid #2b628e;background:#123a32;
+ box-shadow:inset 0 0 40px #0007;
+}
+#toast{
+ position:absolute;left:50%;bottom:42px;transform:translate(-50%,20px);
+ opacity:0;pointer-events:none;background:#06182eE8;border:1px solid #4c8ab6;
+ padding:10px 15px;border-radius:12px;transition:.25s;z-index:20;
+ max-width:85%;text-align:center;font-size:13px;
+}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+.hud{
+ display:flex;align-items:center;justify-content:space-between;gap:12px;
+ padding:9px 4px 0;flex-wrap:wrap;
+}
+.quest{font-size:13px;color:#d9edf9}.quest b{color:var(--cyan)}
+.controls{font-size:11px;color:#8fb2ca}
+.side{
+ background:linear-gradient(180deg,#0b203b,#08172b);
+ border-left:1px solid #214d70;padding:13px;
+ max-height: 580px; overflow-y: auto;
+}
+.chapter{
+ padding:10px;border-radius:12px;border:1px solid #285a80;background:#081a31;
+ margin-bottom:10px;
+}
+.chapter .small{font-size:10px;color:#83b2d3;text-transform:uppercase;letter-spacing:.08em}
+.chapter h3{font-size:15px;margin:4px 0}.chapter p{font-size:11px;color:#a9c8dd;margin:0;line-height:1.4}
+.progress{height:8px;background:#061225;border-radius:8px;overflow:hidden;margin-top:8px}
+.progress>div{height:100%;width:0;background:linear-gradient(90deg,#2c9cff,#45e0ff);transition:.4s}
+.miniTitle{font-size:11px;color:#85b5d6;text-transform:uppercase;margin:12px 0 6px}
+.inventory{display:flex;flex-wrap:wrap;gap:5px}.item{
+ font-size:10px;padding:4px 6px;border-radius:8px;background:#2b220b;
+ border:1px solid #8b6d2c;color:#ffe08a
+}
+.characterCard{
+ display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #173955;
+}
+.avatar{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:#173b5d;font-size:14px}
+.characterCard b{font-size:11px}.characterCard span{display:block;font-size:9px;color:#8eafc7}
+.mobile{display:none;grid-template-columns:repeat(3,48px);justify-content:center;gap:5px;margin-top:8px}
+.mobile button{height:42px;border-radius:9px;border:1px solid #345f82;background:#0c2746;color:#fff}
+.overlay{
+ position:absolute;inset:12px;display:flex;align-items:center;justify-content:center;
+ border-radius:16px;background:#020a15B8;backdrop-filter:blur(5px);z-index:30;
+}
+.card{
+ position:relative;width:min(720px,94%);max-height:90%;overflow:auto;
+ padding:25px;border-radius:20px;border:1px solid #34709e;
+ background:linear-gradient(180deg,#112f52,#081a32);
+ box-shadow:0 25px 80px #000A;
+}
+.card h2{font-size:24px;margin:8px 0}.card p{color:#c8ddec;line-height:1.55}
+.chapterBadge{
+ display:inline-block;padding:5px 9px;border-radius:8px;background:#123e62;
+ border:1px solid #2d709d;color:#67ddff;font-size:11px;font-weight:800;
+}
+.bigIcon{text-align:center;margin:0 0 10px}
+.story-img{
+ width:100%;
+ max-height:220px;
+ object-fit:contain;
+ object-position:center center;
+ background:rgba(0, 0, 0, 0.2);
+ border-radius:12px;
+ border:1px solid #3b6d95;
+ margin-bottom:10px;
+ padding:10px;
+}
+.btn{
+ border:0;border-radius:12px;padding:11px 17px;color:#fff;font-weight:800;cursor:pointer;
+ background:linear-gradient(135deg,#2f7dff,#28c8ff);box-shadow:0 8px 20px #006eff40;
+}
+.btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn.alt{background:#173b62;border:1px solid #3b6e97;box-shadow:none}
+.btn.hint{background:#8a5a00;border:1px solid #ffd166;color:#ffe8a0;margin-top:10px;padding:7px 12px;font-size:12px}
+.form-group{margin:15px 0;text-align:left}
+.form-group label{display:block;margin-bottom:6px;font-size:13px;color:#85b5d6;font-weight:bold}
+.form-group input, .form-group select{
+ width:100%;padding:10px;border-radius:10px;border:1px solid #34638a;
+ background:#08182b;color:#fff;font-size:14px;outline:none;
+}
+.answers{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:15px}
+.answer{
+ padding:12px;text-align:left;border-radius:11px;border:1px solid #356c96;
+ background:#0a2341;color:#eaf7ff;cursor:pointer
+}
+.answer:hover{background:#143b66;border-color:#4ccaff}
+.answer.correct{background:#0d513e;border-color:#4de4ad}
+.answer.wrong{background:#502132;border-color:#ff7282}
+.hintBox{
+ background:#1a2b18;border:1px solid #45e0a2;color:#bbf3db;
+ padding:10px;border-radius:10px;font-size:12px;margin-top:10px;display:none;
+}
+.feedback{min-height:36px;margin-top:11px;color:#d9edf8;font-size:13px}
+.dialogue{
+ position:absolute;z-index:18;display:none;max-width:320px;
+ padding:11px 13px;border-radius:13px;background:#f3f8fc;color:#10253b;
+ border:2px solid #64d8ff;box-shadow:0 10px 35px #0008;font-size:12px;
+}
+.dialogue:after{
+ content:"";position:absolute;bottom:-9px;left:25px;
+ width:15px;height:15px;background:#f3f8fc;transform:rotate(45deg);
+ border-right:2px solid #64d8ff;border-bottom:2px solid #64d8ff;
+}
+.math-watermark{
+ position:absolute;right:15px;bottom:15px;font-size:4rem;color:rgba(69, 220, 255, 0.05);
+ pointer-events:none;font-family:serif;font-weight:bold;user-select:none;
+}
+
+/* ESTILO DO CERTIFICADO */
+#certificateArea{
+ background:#fdfbf7;color:#1a2530;padding:25px;border-radius:15px;
+ border:8px double #c59b27;text-align:center;box-shadow:0 0 20px rgba(0,0,0,0.5);
+ margin-top:15px;position:relative;
+}
+.cert-header-logo{height:65px;width:auto;margin-bottom:10px;object-fit:contain}
+#certificateArea h1{justify-content:center;color:#8a6200;font-size:22px;margin-bottom:5px;border-bottom:2px solid #c59b27;padding-bottom:5px}
+#certificateArea h3{margin:5px 0 15px;font-size:14px;color:#555}
+.cert-name{font-size:22px;font-weight:bold;color:#112f52;text-transform:uppercase;margin:10px 0;border-bottom:1px dashed #aaa;display:inline-block;padding:0 15px}
+.cert-details{display:flex;justify-content:space-around;margin:15px 0;font-size:13px;background:#f4ece1;padding:10px;border-radius:8px}
+.cert-badge{font-size:35px;margin:5px 0}
+
+@media print{
+ body *{visibility:hidden}
+ #certificateArea, #certificateArea *{visibility:visible}
+ #certificateArea{position:absolute;left:0;top:0;width:100%;border:4px solid #000;box-shadow:none}
+}
+
+@media(max-width:850px){
+ .layout{grid-template-columns:1fr}.side{border-left:0;border-top:1px solid #214d70;display:none}
+ .answers{grid-template-columns:1fr}
+}
+@media(max-width:700px){
+ header{align-items:flex-start;flex-direction:column}.stats{justify-content:flex-start}
+ .controls{width:100%}.mobile{display:grid}.card{padding:18px}.card h2{font-size:20px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="shell">
+<header>
+ <div class="logoTitle">
+  <img src="logo.jpg" alt="Logo Liceu" class="school-logo">
+  <div>
+    <h1>O TESOURO DO LICEU <span class="math-syms-header">f(x) ∫ π √x ∑ ∞</span></h1>
+    <div class="sub">Caça ao Tesouro Matemático • EEMTI Liceu Alfredo Almeida Machado</div>
+  </div>
+ </div>
+ <div class="stats">
+  <div class="stat">👤 <b id="studentDisplay">Aluno</b></div>
+  <div class="stat">🪙 <b id="coins">0</b></div>
+  <div class="stat">🔑 <b id="keys">0</b></div>
+  <div class="stat">📜 <b id="done">0/20</b></div>
+  <div class="stat">⭐ <b id="score">0</b></div>
+ </div>
+</header>
+
+<div class="layout">
+<div class="stage">
+ <div class="canvasWrap">
+  <canvas id="game" width="960" height="540"></canvas>
+  <div id="toast"></div>
+  <div id="dialogue" class="dialogue"></div>
+
+  <!-- TELA 1: HISTÓRIA DA ESCOLA -->
+  <div id="introStory" class="overlay">
+   <div class="card">
+    <div class="math-watermark">EEMTI Liceu</div>
+    <div class="bigIcon">
+      <img src="logo.jpg" alt="Logomarca da Escola" class="story-img">
+    </div>
+    <span class="chapterBadge">BEM-VINDO AO LICEU</span>
+    <h2>A História da Nossa Escola</h2>
+    <p>A <b>EEMTI Liceu Alfredo Almeida Machado</b> é um pilar fundamental da educação em Quixeramobim. Com uma trajetória marcada pela dedicação ao conhecimento, inovação e protagonismo estudantil, o Liceu constrói diariamente um ambiente onde a ciência e a cultura se encontram.</p>
+    <p>Agora, um enigma secular desperta dentro de seus corredores: um tesouro matemático foi ocultado por antigos mestres. Somente os alunos capazes de dominar o raciocínio e desvendar os mistérios das funções poderão encontrá-lo!</p>
+    <button class="btn" onclick="showRegistration()">AVANÇAR PARA O CADASTRO</button>
+   </div>
+  </div>
+
+  <!-- TELA 2: IDENTIFICAÇÃO DO ALUNO -->
+  <div id="registration" class="overlay" style="display:none">
+   <div class="card">
+    <div class="math-watermark">1º ANO</div>
+    <div class="bigIcon">🎓 ✏️</div>
+    <span class="chapterBadge">IDENTIFICAÇÃO DO JOGADOR</span>
+    <h2>Digite seus dados para começar</h2>
+    
+    <div class="form-group">
+      <label for="studentName">Nome Completo do Aluno:</label>
+      <input type="text" id="studentName" placeholder="Ex: Maria Clara Silva" required>
+    </div>
+
+    <div class="form-group">
+      <label for="studentClass">Selecione sua Turma:</label>
+      <select id="studentClass">
+        <option value="1º A">1º ANO A</option>
+        <option value="1º B">1º ANO B</option>
+        <option value="1º C">1º ANO C</option>
+        <option value="1º D">1º ANO D</option>
+        <option value="1º H">1º ANO H</option>
+      </select>
+    </div>
+
+    <button class="btn" onclick="confirmStudentData()">INICIAR A AVENTURA</button>
+   </div>
+  </div>
+
+  <!-- QUESTÕES DOS BAÚS -->
+  <div id="question" class="overlay" style="display:none">
+   <div class="card">
+    <div class="math-watermark">f(x) = ax² + bx + c</div>
+    <span class="chapterBadge" id="qBadge"></span>
+    <h2 id="qText"></h2>
+    
+    <button class="btn hint" id="hintBtn" onclick="useHint()">💡 Pedir Dica (2 restantes)</button>
+    <div id="hintBox" class="hintBox"></div>
+
+    <div class="answers" id="answers"></div>
+    <div class="feedback" id="feedback"></div>
+    <button class="btn alt" id="continue" style="display:none"></button>
+   </div>
+  </div>
+
+  <!-- TELA FINAL / CERTIFICADO -->
+  <div id="end" class="overlay" style="display:none">
+   <div class="card" style="max-width:780px">
+    <div class="math-watermark">∞ ∞ ∞</div>
+    <div class="bigIcon">🏆✨</div>
+    <span class="chapterBadge">CONQUISTA FINAL</span>
+    <h2>Você encontrou o Tesouro do Liceu!</h2>
+    <p>A caixa se abre e revela a mensagem: <b>“O conhecimento é o tesouro que abre todos os caminhos.”</b></p>
+    
+    <!-- ÁREA DO CERTIFICADO -->
+    <div id="certificateArea">
+      <img src="logo.jpg" alt="Logo do Liceu" class="cert-header-logo">
+      <h1>CERTIFICADO DE EXCELÊNCIA MATEMÁTICA</h1>
+      <h3>EEMTI Liceu Alfredo Almeida Machado</h3>
+      <p>Certificamos que o(a) estudante:</p>
+      <div class="cert-name" id="certStudentName">NOME DO ALUNO</div>
+      <p>da turma <b id="certStudentClass">1º A</b>, concluiu com êxito a jornada do <b>Tesouro do Liceu</b>, demonstrando domínio em Funções Afins e Quadráticas.</p>
+      
+      <div class="cert-badge" id="certBadge">🥇</div>
+
+      <div class="cert-details">
+        <div><b>Pontuação:</b> <span id="certScore">0</span> pts</div>
+        <div><b>Moedas:</b> 🪙 <span id="certCoins">0</span></div>
+        <div><b>Proficiência:</b> <span id="certLevel">Avançada</span></div>
+      </div>
+      <small style="color:#777">Quixeramobim - Ceará • Projeto Caça ao Tesouro Matemático</small>
+    </div>
+
+    <div style="margin-top:15px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <button class="btn" onclick="window.print()">🖨 IMPRIMIR / SALVAR CERTIFICADO (PDF)</button>
+      <button class="btn alt" onclick="location.reload()">JOGAR NOVAMENTE</button>
+    </div>
+   </div>
+  </div>
+ </div>
+
+ <div class="hud">
+  <div class="quest">🎯 <b>Missão:</b> <span id="quest">Fale com o Prof. Vilaça na entrada.</span></div>
+  <div class="controls">WASD/setas • E/Enter • Explore e converse</div>
+ </div>
+ <div class="mobile">
+  <span></span><button data-key="ArrowUp">▲</button><span></span>
+  <button data-key="ArrowLeft">◀</button><button data-key="e">●</button><button data-key="ArrowRight">▶</button><span></span><button data-key="ArrowDown">▼</button><span></span>
+ </div>
+</div>
+
+<aside class="side">
+ <div class="chapter">
+  <div class="small">Capítulo atual</div>
+  <h3 id="chapterName">1 • A Carta Escondida</h3>
+  <p id="chapterDesc">Descubra a primeira pista e abra o primeiro baú.</p>
+  <div class="progress"><div id="progress"></div></div>
+ </div>
+ <div class="miniTitle">Inventário</div>
+ <div class="inventory" id="inventory"><span style="font-size:10px;color:#7898b0">vazio</span></div>
+
+ <div class="miniTitle">Equipe & Núcleo Gestor</div>
+ <div class="characterCard"><div class="avatar">🧙</div><div><b>Prof. Vilaça</b><span>Guardião das pistas</span></div></div>
+ <div class="characterCard"><div class="avatar">🧑‍🚀</div><div><b>Caio & Bia</b><span>Exploradores</span></div></div>
+ <div class="characterCard"><div class="avatar">👑</div><div><b>Maninha</b><span>Direção</span></div></div>
+ <div class="characterCard"><div class="avatar">📋</div><div><b>Suerlene</b><span>Coordenação</span></div></div>
+ <div class="characterCard"><div class="avatar">📚</div><div><b>Patricia</b><span>Coordenação</span></div></div>
+ <div class="characterCard"><div class="avatar">📊</div><div><b>Samuel</b><span>Coordenação</span></div></div>
+ <div class="characterCard"><div class="avatar">🎓</div><div><b>Francisco</b><span>Coordenação</span></div></div>
+
+ <div class="miniTitle">Mapa</div>
+ <p style="font-size:10px;color:#89a9c1;line-height:1.45">
+ 🟦 Biblioteca<br>🟩 Pátio/Jardim<br>🟪 Laboratório<br>🟨 Quadra<br>🟥 Praça<br>🏆 Tesouro
+ </p>
+</aside>
+</div>
+</div>
+</div>
+
+<script>
+const schoolBg = new Image();
+schoolBg.src = 'IMG_0803.jpg';
+let bgLoaded = false;
+schoolBg.onload = () => { bgLoaded = true; };
+
+const canvas=document.getElementById("game"),ctx=canvas.getContext("2d");
+const W=960,H=540;
+
+let currentStudent = { name: "Aluno", classGroup: "1º A" };
+
+const questions=[
+{n:1,t:"Uma loja cobra uma taxa fixa de R$ 8,00 pela entrega de um produto e mais R$ 3,00 por quilômetro percorrido pelo entregador. Se x representa a quantidade de quilômetros percorridos e y o valor total da entrega, qual é a lei de formação dessa função?",a:["y = 8x + 3","y = 3x + 8","y = 3x − 8","y = 8x − 3","y = 11x"],c:1,hints:["O valor variável depende dos quilômetros (3 vezes x).","A taxa fixa é um valor somado no final (+8)."]},
+{n:2,t:"Uma estudante economiza R$20,00 por semana. A quantia economizada após x semanas pode ser representada por f(x) = 20x. Quanto ela terá economizado após 6 semanas?",a:["R$ 60,00","R$ 100,00","R$ 120,00","R$ 140,00","R$ 160,00"],c:2,hints:["Substitua a variável x pelo número 6.","Calcule a multiplicação simples: 20 × 6."]},
+{n:3,t:"No setor de fabricação de calçados de Quixeramobim, estudantes analisam diferentes tipos de funções. Qual das opções representa uma função afim?",a:["f(x) = x² + 2","f(x) = 3x − 5","f(x) = 4/x","f(x) = x³ + 1","f(x) = 2ˣ"],c:1,hints:["Uma função afim é do 1º grau, no formato f(x) = ax + b.","O expoente da variável x deve ser igual a 1."]},
+{n:4,t:"Um aplicativo de transporte cobra R$ 6,00 de taxa fixa mais R$ 2,00 por quilômetro percorrido. Qual será o valor de uma viagem de 7 km?",a:["R$ 12,00","R$ 14,00","R$ 18,00","R$ 20,00","R$ 21,00"],c:3,hints:["Multiplique os 7 km pela taxa por quilômetro (2 reais).","Some a taxa fixa de 6 reais ao resultado (2×7 + 6)."]},
+{n:5,t:"Em uma situação relacionada à produção de uma fábrica de calçados de Quixeramobim, a quantidade de material utilizado pode ser representada por f(x) = 2x + 4. À medida que x aumenta, o valor de f(x):",a:["diminui.","permanece sempre igual.","aumenta.","torna-se sempre negativo.","torna-se igual a zero."],c:2,hints:["O coeficiente angular (a = 2) é positivo.","Quando o coeficiente de x é maior que zero, a função é crescente."]},
+{n:6,t:"Na atividade de produção de leite da região de Quixeramobim, uma relação entre duas grandezas foi representada por f(x) = x + 2. Qual ponto pertence ao gráfico dessa função?",a:["(0, 0)","(1, 1)","(1, 3)","(2, 5)","(3, 2)"],c:2,hints:["Lembre-se que um ponto é dado por (x, y).","Substitua x = 1 na função: f(1) = 1 + 2 = 3."]},
+{n:7,t:"O gráfico de uma função afim é uma reta que passa pelos pontos (0, 4) e (2, 8). Qual é a lei de formação dessa função?",a:["f(x) = 2x + 4","f(x) = 4x + 2","f(x) = 2x − 4","f(x) = 4x − 2","f(x) = x + 4"],c:0,hints:["Quando x = 0, o valor da função é o termo independente (b = 4).","A taxa de variação (a) é dada por (8 - 4) / (2 - 0) = 2."]},
+{n:8,t:"Em uma atividade de Matemática, a situação é representada por f(x) = 2x − 10. A raiz da função é o valor de x para o qual f(x) = 0. Qual é essa raiz?",a:["2","4","5","8","10"],c:2,hints:["Iguale a expressão a zero: 2x − 10 = 0.","Isole o x: 2x = 10, logo x = 10 / 2."]},
+{n:9,t:"O saldo de uma conta é representado por S(x) = 100 − 20x, em que x representa a quantidade de retiradas de R$ 20,00. Depois de quantas retiradas o saldo será igual a zero?",a:["2","4","5","10","20"],c:2,hints:["Faça S(x) = 0, obtendo 100 − 20x = 0.","Resolva a equação 20x = 100."]},
+{n:10,t:"Qual das funções abaixo representa uma função quadrática?",a:["f(x) = 3x + 2","f(x) = 5 − x","f(x) = x² − 4x + 3","f(x) = 7x","f(x) = 10"],c:2,hints:["Uma função quadrática é do 2º grau.","O maior expoente da variável x deve ser igual a 2 (x²)."]},
+{n:11,t:"Considere a função f(x) = x² − 6x + 5. O gráfico dessa função é uma parábola com concavidade:",a:["para baixo, pois a < 0.","para cima, pois a > 0.","para cima, pois b < 0.","para baixo, pois c > 0.","não possui concavidade."],c:1,hints:["Observe o coeficiente 'a' que acompanha o termo x².","Como a = 1 (maior que zero), a parábola é voltada para cima."]},
+{n:12,t:"Durante uma partida de futebol, a trajetória de uma bola chutada em direção ao gol pode ser representada por f(x) = x² − 5x + 6. Quais são as raízes da função?",a:["1 e 6","2 e 3","3 e 4","−2 e −3","0 e 6"],c:1,hints:["Encontre dois números cuja soma seja 5 e o produto seja 6.","Testando x=2: (2)² - 5(2) + 6 = 4 - 10 + 6 = 0."]},
+{n:13,t:"O gráfico de uma função quadrática corta o eixo x nos pontos x = 2 e x = 6. Isso significa que:",a:["as raízes são 2 e 6.","o vértice é (2, 6).","a função não possui raízes.","o ponto máximo é 6.","o ponto mínimo é 2."],c:0,hints:["Os pontos onde o gráfico corta o eixo das abscissas (x) são onde f(x) = 0.","Esses valores correspondentes são chamados de raízes ou zeros da função."]},
+{n:14,t:"Na atividade leiteira da região de Quixeramobim, uma situação foi representada por f(x) = x² − 4x + 3. Considerando a função apresentada, a coordenada x do vértice da parábola é:",a:["−4","−2","2","3","4"],c:2,hints:["Use a fórmula do x do vértice: Xv = −b / (2a).","Substitua a=1 e b=−4: Xv = −(−4) / (2×1)."]},
+{n:15,t:"Durante uma vaquejada realizada no município de Quixeramobim, uma situação foi modelada por f(x) = −x² + 6x + 1. Como o coeficiente de x² é negativo, a parábola possui concavidade para baixo. O vértice representa um:",a:["ponto máximo.","ponto mínimo.","ponto de raiz.","ponto de interseção com o eixo y.","ponto de origem."],c:0,hints:["Uma parábola voltada para baixo (formato de montanha) tem um topo.","O ponto mais alto de uma curva é o seu ponto máximo."]},
+{n:16,t:"Em uma pequena propriedade de Quixeramobim, a produção de queijo é representada por uma função quadrática cujo gráfico é uma parábola com concavidade voltada para cima. O vértice representa um:",a:["ponto máximo.","ponto mínimo.","ponto de interseção com o eixo y.","ponto de raiz obrigatoriamente.","ponto de origem."],c:1,hints:["Uma parábola voltada para cima (formato de U) tem um fundo.","O ponto mais baixo de uma curva é o seu ponto mínimo."]},
+{n:17,t:"Dona Maria acompanha o orçamento de sua casa e percebe que o valor economizado pode ser representado por f(x) = −x² + 4x + 5. Como a concavidade é para baixo, a função possui um ponto:",a:["mínimo.","máximo.","de origem.","sem vértice.","de raiz única obrigatoriamente."],c:1,hints:["O termo a = −1 é negativo, indicando concavidade para baixo.","Curvas com concavidade para baixo atingem um valor máximo."]},
+{n:18,t:"Um caminhoneiro acompanha o desempenho de sua viagem. A relação entre a quantidade de combustível economizada e a velocidade média foi representada por uma função quadrática. De acordo com o gráfico, o vértice da parábola representa:",a:["o ponto mínimo da função.","o ponto máximo da função.","uma raiz da função obrigatoriamente.","o ponto de interseção com o eixo y.","o ponto de origem."],c:1,hints:["A economia máxima é atingida no topo da curva.","O ponto culminante da parábola é o ponto máximo."]},
+{n:19,t:"DESAFIO RECONSTRUÍDO — A altura de uma bola é dada por h(t) = −t² + 6t. Qual é a altura máxima atingida pela bola?",a:["6 m","8 m","9 m","12 m","18 m"],c:2,hints:["Ache primeiro o tempo do vértice: tv = −6 / (2 × −1) = 3.","Calcule h(3) = −(3)² + 6(3) = −9 + 18."]},
+{n:20,t:"DESAFIO RECONSTRUÍDO — Uma função quadrática que representa um lucro possui concavidade voltada para baixo. O vértice dessa parábola representa:",a:["o menor lucro possível.","o maior lucro possível.","uma raiz obrigatoriamente.","o ponto de origem.","um valor que não pode ser interpretado."],c:1,hints:["O topo do gráfico indica o limite superior do lucro.","Portanto, corresponde ao maior lucro possível atingido."]}
+];
+
+const chapters=[
+ {name:"1 • A Carta Escondida",desc:"Entrada e pátio: descubra a carta e complete os primeiros desafios.",area:"PÁTIO"},
+ {name:"2 • O Código da Biblioteca",desc:"A biblioteca guarda uma chave e os desafios das funções afins.",area:"BIBLIOTECA"},
+ {name:"3 • O Laboratório das Parábolas",desc:"No laboratório, você começa a desvendar as funções quadráticas.",area:"LABORATÓRIO"},
+ {name:"4 • O Desafio da Quadra",desc:"Raízes e vértices levam você até a última chave.",area:"QUADRA"},
+ {name:"5 • A Praça do Tesouro",desc:"Os últimos desafios liberam a caixa escondida.",area:"PRAÇA"}
+];
+
+const player={x:120,y:420,r:15,speed:3.15,dir:1,bob:0};
+
+const npcs=[
+ {id:"vilaca",x:155,y:370,name:"Prof. Vilaça",kind:"vilaca"},
+ {id:"caio",x:465,y:105,name:"Caio",kind:"caio"},
+ {id:"bia",x:690,y:385,name:"Bia",kind:"bia"},
+ {id:"maninha",x:120,y:110,name:"Maninha",kind:"gestor",scroll:"O Número Pi (π)",text:"Maninha lhe entrega um pergaminho: 'Você sabia que o Pi (π = 3,14159...) é uma constante infinita usada desde o Egito antigo para calcular a área de círculos?'"},
+ {id:"suerlene",x:340,y:110,name:"Suerlene",kind:"gestor",scroll:"Sequência de Fibonacci",text:"Suerlene lhe sorri e entrega um pergaminho: 'Na natureza, as pétalas das flores e conchas seguem a sequência 1, 1, 2, 3, 5, 8, 13... que é a famosa Sequência de Fibonacci!'"},
+ {id:"patricia",x:600,y:110,name:"Patricia",kind:"gestor",scroll:"A Proporção Áurea",text:"Patricia compartilha seu conhecimento: 'A Proporção Áurea (1,618) é considerada o número da beleza na arte, arquitetura e no design do corpo humano!'"},
+ {id:"samuel",x:380,y:380,name:"Samuel",kind:"gestor",scroll:"Origem do Zero",text:"Samuel lhe entrega um papiro: 'O número Zero só foi aceito na Europa no século XII! Ele revolucionou o comércio e a álgebra ao ser trazido pelos árabes.'"},
+ {id:"francisco",x:850,y:380,name:"Francisco",kind:"gestor",scroll:"Teorema de Pitágoras",text:"Francisco lhe encoraja: 'Os construtores de pirâmides usavam cordas com nós no triângulo 3-4-5 para criar ângulos retos perfeitamente precisos!'" }
+];
+
+const chests=[
+ {id:1,x:285,y:410,q:0,unlocked:true,opened:false},
+ {id:2,x:500,y:245,q:4,unlocked:false,opened:false},
+ {id:3,x:750,y:135,q:8,unlocked:false,opened:false},
+ {id:4,x:610,y:420,q:12,unlocked:false,opened:false},
+ {id:5,x:825,y:365,q:16,unlocked:false,opened:false}
+];
+const treasure={x:855,y:110,unlocked:false};
+
+let gameStarted=false,activeQ=null,qInChest=0,done=0,coins=0,score=0,chapter=0;
+let inventory=[],particles=[],keysDown={};
+let hintsUsed=0;
+
+const $=id=>document.getElementById(id);
+function distance(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
+function setQuest(t){$("quest").textContent=t}
+function toast(t){
+ const el=$("toast");el.textContent=t;el.classList.add("show");
+ clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.classList.remove("show"),2800);
+}
+function updateUI(){
+ $("coins").textContent=coins;$("keys").textContent=inventory.length;
+ $("done").textContent=done+"/20";$("score").textContent=score;
+ $("progress").style.width=(done/20*100)+"%";
+ $("chapterName").textContent=chapters[chapter].name;
+ $("chapterDesc").textContent=chapters[chapter].desc;
+ $("inventory").innerHTML=inventory.length?inventory.map(x=>`<span class="item">${x.includes('📜')?x:'🔑 '+x}</span>`).join(""):"<span style='font-size:10px;color:#7898b0'>vazio</span>";
+}
+
+function showRegistration(){
+  $("introStory").style.display="none";
+  $("registration").style.display="flex";
+}
+
+function confirmStudentData(){
+  const nameInput = $("studentName").value.trim();
+  const classInput = $("studentClass").value;
+
+  if(!nameInput){
+    alert("Por favor, digite seu nome para continuar!");
+    return;
+  }
+
+  currentStudent.name = nameInput;
+  currentStudent.classGroup = classInput;
+  $("studentDisplay").textContent = currentStudent.name.split(" ")[0] + " (" + currentStudent.classGroup + ")";
+
+  $("registration").style.display="none";
+  startGame();
+}
+
+function startGame(){
+ gameStarted=true;
+ player.x=155;player.y=315;
+ setQuest("Fale com o Prof. Vilaça e descubra a primeira pista.");
+ showDialogue("Prof. Vilaça","Olá, "+currentStudent.name+"! A carta diz que cinco baús escondem o caminho. Comece pelo Baú 1, no pátio!");
+ updateUI();
+}
+
+window.addEventListener("keydown", e => {
+  if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+    return;
+  }
+
+  const k = e.key.toLowerCase();
+  keysDown[k] = true;
+  
+  if (["arrowup", "arrowdown", "arrowleft", "arrowright", " ", "w", "a", "s", "d"].includes(k)) {
+    e.preventDefault();
+  }
+  
+  if ((k === "e" || e.key === "Enter") && gameStarted && !activeQ) {
+    interact();
+  }
+});
+
+window.addEventListener("keyup", e => {
+  if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+    return;
+  }
+  keysDown[e.key.toLowerCase()] = false;
+});
+
+document.querySelectorAll(".mobile button").forEach(b=>{
+ b.addEventListener("pointerdown",()=>{if(b.dataset.key==="e")interact();else keysDown[b.dataset.key.toLowerCase()]=true});
+ b.addEventListener("pointerup",()=>keysDown[b.dataset.key.toLowerCase()]=false);
+ b.addEventListener("pointerleave",()=>keysDown[b.dataset.key.toLowerCase()]=false);
+});
+
+function showDialogue(name,text){
+ const el=$("dialogue");el.innerHTML=`<b>${name}</b><br>${text}`;el.style.display="block";
+ const n=npcs.find(x=>x.name===name);
+ if(n){el.style.left=(n.x/W*100)+"%";el.style.top=Math.max(3,(n.y/H*100)-18)+"%";}
+ clearTimeout(showDialogue.t);showDialogue.t=setTimeout(()=>el.style.display="none",6000);
+}
+function nearest(){
+ let arr=[...npcs,...chests.map(x=>({...x,type:"chest"})),{...treasure,type:"treasure"}];
+ let best=null,bestD=999;
+ for(const o of arr){const d=distance(player,o);if(d<bestD){bestD=d;best=o}}
+ return bestD<62?best:null;
+}
+function interact(){
+ const o=nearest();
+ if(!o){toast("Explore o mapa e aproxime-se de um personagem ou baú.");return}
+ if(o.type==="treasure"){finish();return}
+ if(o.type==="chest"){openChest(o);return}
+ talk(o);
+}
+function talk(n){
+ if(n.kind==="gestor"){
+   showDialogue(n.name, n.text);
+   const itemTag = "📜 Pergaminho ("+n.scroll+")";
+   if(!inventory.includes(itemTag)){
+     inventory.push(itemTag);
+     toast("📜 Você recebeu uma curiosidade matemática de "+n.name+"!");
+   }
+   updateUI();
+   return;
+ }
+ if(n.id==="vilaca"){
+   if(done<4){chapter=0;setQuest("Abra o Baú 1 e resolva as questões 1–4.");showDialogue("Prof. Vilaça","Sua primeira missão é no pátio. O Baú 1 guarda quatro desafios.");}
+   else{chapter=1;chests[1].unlocked=true;setQuest("Converse com Caio na biblioteca.");showDialogue("Prof. Vilaça","Você conseguiu! Agora Caio conhece o código da biblioteca.");}
+ }
+ if(n.id==="caio"){
+   if(done<8){chapter=1;chests[1].unlocked=true;setQuest("Abra o Baú 2 e resolva as questões 5–8.");showDialogue("Caio","A biblioteca esconde o segundo código. Abra o Baú 2.");}
+   else{chapter=2;chests[2].unlocked=true;setQuest("Abra o Baú 3 no laboratório.");showDialogue("Caio","A chave do laboratório é sua. Agora as parábolas entram em cena.");}
+ }
+ if(n.id==="bia"){
+   if(done<12){chapter=3;chests[3].unlocked=true;setQuest("Abra o Baú 4 e resolva as questões 13–16.");showDialogue("Bia","As pistas chegaram à quadra. O quarto baú está esperando.");}
+   else if(done<16){chapter=4;chests[4].unlocked=true;setQuest("Abra o Baú 5 e resolva as questões 17–20.");showDialogue("Bia","Você está perto! O último baú fica na praça.");}
+   else{chapter=4;setQuest("O tesouro está liberado. Vá até o 🏆.");showDialogue("Bia","Você completou todos os desafios. Agora procure a caixa dourada!");}
+ }
+ updateUI();
+}
+function openChest(c){
+ if(c.opened){toast("Este baú já foi aberto.");return}
+ if(!c.unlocked){toast("🔒 Baú bloqueado. Complete a etapa anterior.");return}
+ if(done!==c.q){toast("Complete os desafios anteriores antes de abrir este baú.");return}
+ qInChest=0;askQuestion(c);
+}
+function askQuestion(c){
+ const idx=c.q+qInChest;if(idx>=c.q+4){finishChest(c);return}
+ activeQ={c,idx};const q=questions[idx];
+ hintsUsed=0;
+ $("question").style.display="flex";$("qBadge").textContent=`CAPÍTULO ${chapter+1} • DESAFIO ${q.n}`;
+ $("qText").textContent=q.t;$("feedback").textContent="";$("continue").style.display="none";
+ $("hintBox").style.display="none";$("hintBtn").style.display="inline-block";
+ $("hintBtn").textContent="💡 Pedir Dica (2 restantes)";
+ 
+ renderOptions();
+}
+
+function renderOptions(){
+ const q=questions[activeQ.idx];
+ const box=$("answers");box.innerHTML="";
+ q.a.forEach((a,i)=>{
+  const b=document.createElement("button");b.className="answer";
+  b.textContent=String.fromCharCode(65+i)+") "+a;
+  b.onclick=()=>answer(i,b);box.appendChild(b);
+ });
+}
+
+function useHint(){
+ const q=questions[activeQ.idx];
+ if(hintsUsed < 2){
+   const hBox=$("hintBox");
+   hBox.style.display="block";
+   hBox.innerHTML += `<div><b>Dica ${hintsUsed+1}:</b> ${q.hints[hintsUsed]}</div>`;
+   hintsUsed++;
+   $("hintBtn").textContent = `💡 Pedir Dica (${2 - hintsUsed} restantes)`;
+   if(hintsUsed===2) $("hintBtn").style.display="none";
+ }
+}
+
+function answer(i,btn){
+ const q=questions[activeQ.idx];
+ document.querySelectorAll(".answer").forEach(b=>b.disabled=true);
+ const contBtn = $("continue");
+
+ if(i===q.c){
+  btn.classList.add("correct");coins+=10;score+=100;done++;qInChest++;
+  spawnCoins(player.x,player.y,7);
+  $("feedback").innerHTML="✅ <b>Acertou!</b> +10 moedas e +100 pontos.";
+  contBtn.textContent="PRÓXIMA QUESTÃO";
+  contBtn.style.display="inline-block";
+  contBtn.onclick=()=>{
+    $("question").style.display="none";
+    const currentC = activeQ.c;
+    activeQ=null;
+    askQuestion(currentC);
+  };
+ }else{
+  btn.classList.add("wrong");coins=Math.max(0,coins-3);score=Math.max(0,score-25);
+  $("feedback").innerHTML="❌ Resposta incorreta! Você perdeu 3 moedas e 25 pontos. Tente novamente nesta mesma questão.";
+  contBtn.textContent="🔄 TENTAR NOVAMENTE";
+  contBtn.style.display="inline-block";
+  contBtn.onclick=()=>{
+    $("feedback").innerHTML="";
+    contBtn.style.display="none";
+    renderOptions();
+  };
+ }
+ updateUI();
+}
+
+function finishChest(c){
+ c.opened=true;
+ const rewards=["Pátio","Biblioteca","Laboratório","Quadra","Praça"][c.id-1];
+ if(!inventory.includes(rewards))inventory.push(rewards);
+ if(c.id<5){
+  chapter=c.id;
+  if(c.id===1){chests[1].unlocked=true;setQuest("Converse com Caio na biblioteca.");}
+  if(c.id===2){chests[2].unlocked=true;setQuest("Abra o Baú 3 no laboratório.");}
+  if(c.id===3){chests[3].unlocked=true;setQuest("Converse com Bia e siga para a quadra.");}
+  if(c.id===4){chests[4].unlocked=true;setQuest("Converse com Bia e abra o último baú.");}
+  toast("🔑 Você encontrou a chave da "+rewards+"!");
+ }else{
+  treasure.unlocked=true;chapter=4;setQuest("🏆 Vá até o tesouro e pressione E.");toast("🏆 Todos os 20 desafios concluídos!");
+ }
+ updateUI();
+}
+
+function finish(){
+ if(!treasure.unlocked){toast("O tesouro ainda está trancado. Complete os 20 desafios.");return}
+ 
+ $("certStudentName").textContent = currentStudent.name;
+ $("certStudentClass").textContent = currentStudent.classGroup;
+ $("certScore").textContent = score;
+ $("certCoins").textContent = coins;
+
+ let level = "Básica";
+ let badge = "🥉";
+ if(score >= 1800) { level = "Mestre das Funções"; badge = "🏆"; }
+ else if(score >= 1400) { level = "Avançada"; badge = "🥇"; }
+ else if(score >= 1000) { level = "Intermediária"; badge = "🥈"; }
+
+ $("certLevel").textContent = level;
+ $("certBadge").textContent = badge;
+
+ $("end").style.display="flex";
+}
+
+function move(){
+ if(!gameStarted||activeQ)return;
+ let dx=0,dy=0;
+ if(keysDown["arrowleft"]||keysDown["a"])dx--;
+ if(keysDown["arrowright"]||keysDown["d"])dx++;
+ if(keysDown["arrowup"]||keysDown["w"])dy--;
+ if(keysDown["arrowdown"]||keysDown["s"])dy++;
+ if(dx||dy){
+  const l=Math.hypot(dx,dy);dx/=l;dy/=l;
+  player.x+=dx*player.speed;player.y+=dy*player.speed;player.dir=dx||player.dir;player.bob+=.2;
+ }
+ player.x=Math.max(28,Math.min(W-28,player.x));player.y=Math.max(58,Math.min(H-28,player.y));
+}
+function spawnCoins(x,y,n){
+ for(let i=0;i<n;i++)particles.push({x,y,vx:(Math.random()-.5)*2.5,vy:-Math.random()*2.8-1,life:45,type:"coin"});
+}
+function updateParticles(){
+ particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.08;p.life--});
+ particles=particles.filter(p=>p.life>0);
+}
+
+function draw(){
+ ctx.clearRect(0,0,W,H);
+ drawWorld();drawObjects();drawParticles();drawPlayer();drawPrompt();
+}
+function drawWorld(){
+ if (bgLoaded) {
+   ctx.drawImage(schoolBg, 0, 0, W, H);
+   ctx.fillStyle = 'rgba(10, 25, 45, 0.75)';
+   ctx.fillRect(0, 0, W, H);
+ } else {
+   ctx.fillStyle="#123b35";ctx.fillRect(0,0,W,H);
+ }
+
+ ctx.fillStyle="#9b8259";
+ [[0,430,960,55],[145,60,55,430],[445,0,55,540],[700,60,55,480],[190,245,570,42]].forEach(r=>ctx.fillRect(...r));
+ 
+ zone(18,60,180,150,"rgba(27, 75, 72, 0.85)","ENTRADA / PÁTIO");
+ zone(220,60,190,155,"rgba(33, 75, 97, 0.85)","BIBLIOTECA");
+ zone(515,60,165,155,"rgba(41, 71, 97, 0.85)","LABORATÓRIO");
+ zone(765,60,175,155,"rgba(36, 72, 62, 0.85)","JARDIM");
+ zone(55,290,210,165,"rgba(37, 75, 60, 0.85)","PÁTIO");
+ zone(300,295,185,160,"rgba(58, 66, 87, 0.85)","CANTINA");
+ zone(520,295,190,160,"rgba(61, 76, 61, 0.85)","QUADRA");
+ zone(745,285,195,170,"rgba(65, 65, 90, 0.85)","PRAÇA");
+
+ ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+ ctx.font = 'bold 36px serif';
+ ctx.fillText("∫", 100, 200);
+ ctx.fillText("π", 350, 200);
+ ctx.fillText("√x", 600, 200);
+ ctx.fillText("∑", 830, 200);
+ ctx.fillText("f(x)", 400, 420);
+ ctx.fillText("∞", 640, 420);
+
+ ctx.fillStyle="#122c47";ctx.fillRect(35,85,145,72);
+ ctx.fillStyle="#e7f4fb";ctx.font="bold 14px Segoe UI";ctx.textAlign="center";ctx.fillText("EEMTI LICEU",107,111);
+ ctx.font="10px Segoe UI";ctx.fillText("Alfredo Almeida Machado",107,130);ctx.textAlign="left";
+ 
+ [[48,250],[105,250],[205,180],[690,250],[725,250],[920,250],[250,485],[700,485],[920,480]].forEach(([x,y])=>tree(x,y));
+ [210,270,510,270,760,270].forEach(x=>lamp(x,270));
+}
+function zone(x,y,w,h,c,label){
+ ctx.fillStyle=c;ctx.fillRect(x,y,w,h);ctx.strokeStyle="#ffffff18";ctx.strokeRect(x,y,w,h);
+ ctx.fillStyle="#d7f0ff99";ctx.font="10px Segoe UI";ctx.fillText(label,x+8,y+16);
+}
+function tree(x,y){
+ ctx.fillStyle="#573d2b";ctx.fillRect(x-4,y+10,8,20);
+ ctx.fillStyle="#2a7752";ctx.beginPath();ctx.arc(x,y,19,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle="#3d9862";ctx.beginPath();ctx.arc(x-9,y-7,10,0,Math.PI*2);ctx.fill();
+}
+function lamp(x,y){
+ ctx.fillStyle="#3a5267";ctx.fillRect(x-2,y,4,18);ctx.fillStyle="#ffe8a0";ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fill();
+}
+function drawObjects(){
+ chests.forEach(drawChest);
+ npcs.forEach(drawCharacter);
+ drawTreasure();
+}
+function drawChest(c){
+ const bob=Math.sin(performance.now()/350+c.id)*1.5;
+ ctx.save();ctx.translate(c.x,c.y+bob);
+ ctx.fillStyle="#0006";ctx.beginPath();ctx.ellipse(0,21,27,7,0,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle=c.unlocked?"#a86e29":"#555b61";ctx.fillRect(-24,0,48,25);
+ ctx.fillStyle=c.unlocked?"#d6963d":"#777d82";ctx.fillRect(-24,-11,48,13);
+ ctx.fillStyle=c.unlocked?"#ffe083":"#9ca4aa";ctx.fillRect(-4,-1,8,11);
+ if(c.opened){ctx.strokeStyle="#ffd166";ctx.lineWidth=3;ctx.strokeRect(-27,-15,54,43)}
+ ctx.fillStyle="#edf8ff";ctx.font="bold 10px Segoe UI";ctx.textAlign="center";ctx.fillText("BAÚ "+c.id,0,-22);
+ ctx.font="18px Segoe UI";ctx.fillText(c.unlocked?"✦":"🔒",0,42);ctx.textAlign="left";ctx.restore();
+}
+function drawCharacter(n){
+ const t=performance.now()/300;const bob=Math.sin(t+n.x)*2;
+ ctx.save();ctx.translate(n.x,n.y+bob);
+ ctx.fillStyle="#0006";ctx.beginPath();ctx.ellipse(0,28,22,7,0,0,Math.PI*2);ctx.fill();
+
+ let coat=n.kind==="vilaca"?"#6b57d9":n.kind==="caio"?"#e08c2f":n.kind==="bia"?"#e94e88":"#2b7a4b";
+ ctx.fillStyle=coat;roundRect(-16,0,32,28,8,true);
+ ctx.fillStyle="#f2c6a5";ctx.beginPath();ctx.arc(0,-8,12,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle=n.kind==="gestor"?"#1b3552":n.kind==="vilaca"?"#3d244c":n.kind==="caio"?"#35251b":"#2c1c2a";
+ ctx.beginPath();ctx.arc(0,-11,12,Math.PI,Math.PI*2);ctx.fill();
+ ctx.fillStyle="#12243b";ctx.fillRect(-5,-8,2,2);ctx.fillRect(3,-8,2,2);
+ if(n.kind==="gestor"){ctx.fillStyle="#ffd166";ctx.fillRect(-12,-22,24,6)}
+ ctx.fillStyle="#eaf7ff";ctx.font="bold 10px Segoe UI";ctx.textAlign="center";ctx.fillText(n.name,0,45);ctx.textAlign="left";
+ ctx.restore();
+}
+function drawTreasure(){
+ ctx.save();ctx.translate(treasure.x,treasure.y);
+ const pulse=1+Math.sin(performance.now()/250)*.04;
+ ctx.scale(pulse,pulse);
+ ctx.fillStyle="#0006";ctx.beginPath();ctx.ellipse(0,25,28,8,0,0,Math.PI*2);ctx.fill();
+ if(treasure.unlocked){
+  ctx.shadowColor="#ffd166";ctx.shadowBlur=22;
+  ctx.fillStyle="#d79a27";ctx.fillRect(-25,0,50,25);ctx.fillStyle="#ffd866";ctx.fillRect(-25,-10,50,13);
+  ctx.fillStyle="#fff1a4";ctx.fillRect(-5,-1,10,11);
+  ctx.shadowBlur=0;ctx.font="bold 11px Segoe UI";ctx.textAlign="center";ctx.fillText("TESOURO",0,45);
+ }else{
+  ctx.font="42px Segoe UI";ctx.textAlign="center";ctx.fillText("🔒",0,10);ctx.font="bold 10px Segoe UI";ctx.fillText("BLOQUEADO",0,43);
+ }
+ ctx.textAlign="left";ctx.restore();
+}
+function drawPlayer(){
+ ctx.save();ctx.translate(player.x,player.y);
+ const bob=Math.sin(player.bob)*1.5;
+ ctx.translate(0,bob);
+ ctx.fillStyle="#0007";ctx.beginPath();ctx.ellipse(0,20,18,6,0,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle="#e64d59";roundRect(-18,0,8,18,3,true);
+ ctx.fillStyle="#172c48";ctx.fillRect(-9,14,7,11);ctx.fillRect(2,14,7,11);
+ ctx.fillStyle="#31b8e8";roundRect(-14,-5,28,24,8,true);
+ ctx.fillStyle="#f1c5a5";ctx.beginPath();ctx.arc(0,-16,12,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle="#20253a";ctx.beginPath();ctx.arc(0,-20,12,Math.PI,Math.PI*2);ctx.fill();
+ ctx.fillStyle="#0c1a2c";ctx.fillRect(-5,-17,2,2);ctx.fillRect(3,-17,2,2);
+ ctx.fillStyle="#ffd166";ctx.fillRect(-11,-28,22,5);ctx.fillRect(4,-24,9,3);
+ ctx.restore();
+}
+function drawParticles(){
+ particles.forEach(p=>{
+  ctx.save();ctx.globalAlpha=Math.max(0,p.life/45);
+  ctx.fillStyle="#ffd166";ctx.font="15px Segoe UI";ctx.fillText("🪙",p.x,p.y);ctx.restore();
+ });
+}
+function drawPrompt(){
+ if(activeQ)return;
+ const o=nearest();if(!o)return;
+ let label=o.type==="treasure"?"Abrir tesouro":o.type==="chest"?"Abrir baú":o.kind==="gestor"?"Ouvir pergaminho":"Conversar";
+ ctx.save();ctx.fillStyle="#06172dea";roundRect(player.x-72,player.y-55,144,27,8,true);
+ ctx.fillStyle="#fff";ctx.font="bold 11px Segoe UI";ctx.textAlign="center";ctx.fillText("E • "+label,player.x,player.y-37);ctx.textAlign="left";ctx.restore();
+}
+function roundRect(x,y,w,h,r,fill){
+ ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);if(fill)ctx.fill();
+}
+
+function loop(){move();updateParticles();draw();requestAnimationFrame(loop)}
+updateUI();loop();
+</script>
+</body>
+</html>
